@@ -1,13 +1,3 @@
-"""
-Customer Churn Prediction Pipeline v2
-=======================================
-Improvements over v1:
-- Class imbalance handling via SMOTE + class_weight
-- XGBoost added as 4th model
-- Threshold optimization for recall
-- GridSearchCV scoring on recall
-- Precision-Recall curve saved
-"""
 
 import numpy as np
 import pandas as pd
@@ -43,7 +33,7 @@ except ImportError:
     print("[!] XGBoost not installed. Skipping XGB. Run: pip install xgboost")
 
 
-# ─── 1. DATA LOADING ────────────────────────────────────────────────────────
+#  1. DATA LOADING 
 
 def load_data(filepath: str) -> pd.DataFrame:
     df = pd.read_csv(filepath)
@@ -60,7 +50,7 @@ def quick_summary(df: pd.DataFrame):
     print(df["Churn"].value_counts(normalize=True).map("{:.1%}".format))
 
 
-# ─── 2. PREPROCESSING ────────────────────────────────────────────────────────
+# 2. PREPROCESSING
 
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -103,7 +93,7 @@ def split_scale(df: pd.DataFrame, target: str = "Churn", test_size: float = 0.2)
     return X_train_s, X_test_s, y_train, y_test, scaler, X.columns.tolist()
 
 
-# ─── 3. CLASS IMBALANCE — SMOTE ──────────────────────────────────────────────
+# 3. CLASS IMBALANCE — SMOTE 
 
 def apply_smote(X_train, y_train):
     if not SMOTE_AVAILABLE:
@@ -118,7 +108,7 @@ def apply_smote(X_train, y_train):
     return X_res, y_res
 
 
-# ─── 4. MODEL DEFINITIONS ────────────────────────────────────────────────────
+#  4. MODEL DEFINITIONS 
 
 def get_models(pos_weight: float = 1.0) -> dict:
     models = {
@@ -151,7 +141,7 @@ def find_best_threshold(y_test, y_proba, min_recall: float = 0.80) -> float:
     return float(best)
 
 
-# ─── 6. TRAINING ─────────────────────────────────────────────────────────────
+# 6. TRAINING
 
 def train_all(X_train, y_train) -> dict:
     pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
@@ -169,7 +159,7 @@ def train_all(X_train, y_train) -> dict:
     return fitted
 
 
-# ─── 7. EVALUATION ───────────────────────────────────────────────────────────
+# 7. EVALUATION
 
 def evaluate(models: dict, X_test, y_test, output_dir: str = "outputs"):
     os.makedirs(output_dir, exist_ok=True)
@@ -256,7 +246,7 @@ def _plot_precision_recall(y_test, y_proba, name, threshold, output_dir):
     print(f"[✓] Saved → {output_dir}/precision_recall_curve.png")
 
 
-# ─── 8. FEATURE IMPORTANCE ───────────────────────────────────────────────────
+#  8. FEATURE IMPORTANCE 
 
 def plot_feature_importance(model, feature_names: list, output_dir: str = "outputs", top_n: int = 15):
     if not hasattr(model, "feature_importances_"):
@@ -276,7 +266,7 @@ def plot_feature_importance(model, feature_names: list, output_dir: str = "outpu
     print(f"[✓] Saved → {output_dir}/feature_importance.png")
 
 
-# ─── 9. EXPORT ───────────────────────────────────────────────────────────────
+# 9. EXPORT 
 
 def export_artifacts(model, scaler, feature_names: list, threshold: float, output_dir: str = "outputs"):
     os.makedirs(output_dir, exist_ok=True)
@@ -288,7 +278,7 @@ def export_artifacts(model, scaler, feature_names: list, threshold: float, outpu
     print(f"[✓] Exported model, scaler, features, threshold → {output_dir}/")
 
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
+#  MAIN 
 
 if __name__ == "__main__":
     DATA_PATH  = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"

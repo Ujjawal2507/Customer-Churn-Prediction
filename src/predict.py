@@ -1,12 +1,4 @@
-"""
-Churn Predictor — Inference
-============================
-Load trained artifacts and score new customer records.
-
-Usage:
-  python predict.py --input data/new_customers.csv --output outputs/predictions.csv
-"""
-
+"
 import argparse
 import pandas as pd
 import numpy as np

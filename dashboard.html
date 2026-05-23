@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChurnLens — Customer Retention Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<style>
+/* ── TOKENS ── */
+[data-theme="light"] {
+  --bg:        #f5f4f1;
+  --bg2:       #ffffff;
+  --bg3:       #eceae5;
+  --bg4:       #e2dfd9;
+  --surf:      #ffffff;
+  --surf2:     #f9f8f6;
+  --line:      rgba(0,0,0,.09);
+  --line2:     rgba(0,0,0,.05);
+  --t1:        #111110;
+  --t2:        #3d3c3a;
+  --t3:        #6e6c68;
+  --t4:        #a39f99;
+  --sidebar-bg:#18181b;
+  --sidebar-t1:#f4f4f5;
+  --sidebar-t2:rgba(244,244,245,.55);
+  --sidebar-t3:rgba(244,244,245,.25);
+  --sidebar-ln:rgba(244,244,245,.08);
+  --card-bg:   #ffffff;
+  --topbar-bg: rgba(245,244,241,.92);
+}
+[data-theme="dark"] {
+  --bg:        #111113;
+  --bg2:       #1a1a1d;
+  --bg3:       #242428;
+  --bg4:       #2e2e33;
+  --surf:      #1a1a1d;
+  --surf2:     #242428;
+  --line:      rgba(255,255,255,.08);
+  --line2:     rgba(255,255,255,.04);
+  --t1:        #f0eff0;
+  --t2:        #c4c3c8;
+  --t3:        #86858d;
+  --t4:        #55545c;
+  --sidebar-bg:#0d0d0f;
+  --sidebar-t1:#f0eff0;
+  --sidebar-t2:rgba(240,239,240,.5);
+  --sidebar-t3:rgba(240,239,240,.22);
+  --sidebar-ln:rgba(240,239,240,.07);
+  --card-bg:   #1a1a1d;
+  --topbar-bg: rgba(17,17,19,.92);
+}
+
+/* ── SEMANTIC ── */
+:root {
+  --accent:    #d95f35;
+  --accent-bg: rgba(217,95,53,.12);
+  --teal:      #148f7e;
+  --teal-bg:   rgba(20,143,126,.12);
+  --sky:       #2970b8;
+  --sky-bg:    rgba(41,112,184,.12);
+  --gold:      #b8820f;
+  --gold-bg:   rgba(184,130,15,.12);
+  --green:     #2e7d32;
+  --green-bg:  rgba(46,125,50,.12);
+  --sans:      'Plus Jakarta Sans', system-ui, sans-serif;
+  --mono:      'JetBrains Mono', 'Fira Mono', monospace;
+  --r:         8px;
+  --r2:        12px;
+  --r3:        16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+html { font-size: 15px; scroll-behavior: smooth }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--t1);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background .25s, color .25s;
+}
+
+/* ── LAYOUT ── */
+.shell { display: grid; grid-template-columns: 228px 1fr; min-height: 100vh }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--sidebar-bg);
+  display: flex; flex-direction: column;
+  padding: 0;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;
+  transition: background .25s;
+}
+.sidebar-inner { display: flex; flex-direction: column; height: 100%; padding: 24px 0 }
+.logo-wrap { padding: 0 20px 24px; border-bottom: 1px solid var(--sidebar-ln); margin-bottom: 8px }
+.logo-mark { display: flex; align-items: center; gap: 10px }
+.logo-icon {
+  width: 34px; height: 34px; background: var(--accent);
+  border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.logo-icon svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2 }
+.logo-text strong { display: block; font-size: 14px; font-weight: 800; letter-spacing: .01em; color: var(--sidebar-t1) }
+.logo-text span { display: block; font-family: var(--mono); font-size: 10px; color: var(--sidebar-t3); letter-spacing: .06em; text-transform: uppercase; margin-top: 1px }
+
+.nav { flex: 1; padding: 8px 0 }
+.nav-group { margin-bottom: 20px }
+.nav-section-label {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--sidebar-t3); padding: 0 20px 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px; font-size: 13.5px; font-weight: 500;
+  color: var(--sidebar-t2); cursor: pointer;
+  border-left: 2.5px solid transparent; text-decoration: none;
+  transition: color .13s, background .13s;
+}
+.nav-item:hover { color: var(--sidebar-t1); background: rgba(255,255,255,.04) }
+.nav-item.active { color: var(--sidebar-t1); border-left-color: var(--accent); background: rgba(217,95,53,.1) }
+.nav-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0 }
+
+.sidebar-footer {
+  padding: 16px 20px 0;
+  border-top: 1px solid var(--sidebar-ln);
+  margin-top: auto;
+}
+.sidebar-kpi-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--sidebar-t3); margin-bottom: 4px }
+.sidebar-kpi-val { font-family: var(--mono); font-size: 24px; font-weight: 500; color: var(--sidebar-t1); letter-spacing: -.02em; line-height: 1.1 }
+.sidebar-kpi-sub { font-size: 11.5px; color: var(--sidebar-t3); margin-top: 3px }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--line);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 30;
+  transition: background .25s, border-color .25s;
+}
+.topbar-left h1 { font-size: 16px; font-weight: 700; color: var(--t1); letter-spacing: -.01em }
+.topbar-left p { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-top: 2px }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 999px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .03em;
+  border: 1px solid var(--line); color: var(--t3); background: var(--surf2);
+  transition: background .25s, border-color .25s, color .25s;
+}
+.chip.live { color: var(--green); border-color: rgba(46,125,50,.25); background: var(--green-bg) }
+.chip.live::before { content:''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2.2s infinite }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* THEME TOGGLE BUTTON */
+.theme-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--surf2); color: var(--t2);
+  cursor: pointer; transition: all .2s; flex-shrink: 0;
+}
+.theme-btn:hover { background: var(--bg3); color: var(--t1) }
+.theme-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8 }
+.theme-btn .icon-sun { display: none }
+.theme-btn .icon-moon { display: block }
+[data-theme="dark"] .theme-btn .icon-sun { display: block }
+[data-theme="dark"] .theme-btn .icon-moon { display: none }
+
+.action-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--t1); color: var(--bg);
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  cursor: pointer; letter-spacing: .01em;
+  transition: background .15s, color .15s;
+}
+.action-btn:hover { opacity: .85 }
+.action-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8 }
+
+/* ── CONTENT ── */
+.main { display: flex; flex-direction: column; min-width: 0 }
+.content { padding: 24px 28px; flex: 1 }
+
+/* ── KPI STRIP ── */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--line); border-radius: var(--r2);
+  overflow: hidden; margin-bottom: 22px;
+  background: var(--card-bg);
+  transition: background .25s, border-color .25s;
+}
+.stat-cell { padding: 18px 20px; border-right: 1px solid var(--line); position: relative }
+.stat-cell:last-child { border-right: none }
+.stat-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100% }
+.stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--t4); margin-bottom: 9px }
+.stat-value { font-size: 26px; font-weight: 800; letter-spacing: -.035em; line-height: 1; color: var(--t1) }
+.stat-sub { font-size: 12px; color: var(--t3); margin-top: 6px }
+.delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  padding: 2px 8px; border-radius: 4px; margin-top: 8px;
+}
+.delta-up   { background: var(--green-bg); color: var(--green) }
+.delta-down { background: var(--accent-bg); color: var(--accent) }
+.delta-neu  { background: var(--sky-bg); color: var(--sky) }
+
+/* ── GRID ── */
+.row2 { display: grid; grid-template-columns: 1fr 340px; gap: 18px; margin-bottom: 18px }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px }
+.row-full { margin-bottom: 18px }
+
+/* ── CARD ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  overflow: hidden;
+  transition: background .25s, border-color .25s;
+}
+.card-head {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--line2);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.card-head h2 { font-size: 14px; font-weight: 700; color: var(--t1); letter-spacing: -.01em }
+.card-head p { font-size: 12.5px; color: var(--t3); margin-top: 4px; line-height: 1.55 }
+.card-body { padding: 18px 22px }
+
+/* ── CHARTS ── */
+.chart-wrap { position: relative; width: 100% }
+.h260 { height: 260px }
+.h220 { height: 220px }
+
+/* ── MODEL TABS ── */
+.model-tabs { display: flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; flex-shrink: 0 }
+.model-tab {
+  padding: 5px 12px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .04em;
+  cursor: pointer; border: none; background: transparent; color: var(--t3);
+  border-right: 1px solid var(--line); transition: all .12s;
+}
+.model-tab:last-child { border-right: none }
+.model-tab.active { background: var(--t1); color: var(--bg) }
+
+/* ── RISK BARS ── */
+.risk-section { display: grid; gap: 14px }
+.risk-row { display: grid; grid-template-columns: 68px 1fr 36px; align-items: center; gap: 12px }
+.risk-label { font-size: 13px; font-weight: 600 }
+.risk-track { background: var(--bg3); border-radius: 999px; height: 8px; overflow: hidden }
+.risk-fill { height: 100%; border-radius: 999px; transition: width .7s cubic-bezier(.4,0,.2,1) }
+.risk-val { font-family: var(--mono); font-size: 11.5px; color: var(--t3); text-align: right }
+
+/* ── FEATURE BARS ── */
+.feat-list { display: grid; gap: 12px }
+.feat-row { display: grid; gap: 5px }
+.feat-meta { display: flex; justify-content: space-between; align-items: baseline }
+.feat-name { font-size: 13px; font-weight: 600; color: var(--t1) }
+.feat-pct { font-family: var(--mono); font-size: 11.5px; color: var(--t3) }
+.feat-track { background: var(--bg3); border-radius: 999px; height: 7px; overflow: hidden }
+.feat-fill { height: 100%; border-radius: 999px; background: var(--teal); transition: width .7s cubic-bezier(.4,0,.2,1) }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse }
+.data-table thead th {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--t4); text-align: left; padding: 11px 16px;
+  border-bottom: 1px solid var(--line); background: var(--surf2); white-space: nowrap;
+  transition: background .25s;
+}
+.data-table tbody td {
+  padding: 12px 16px; font-size: 13.5px; color: var(--t2);
+  border-bottom: 1px solid var(--line2); transition: background .15s;
+}
+.data-table tbody tr:last-child td { border-bottom: none }
+.data-table tbody tr:hover td { background: var(--surf2) }
+.data-table td.mono { font-family: var(--mono); font-size: 12px; color: var(--t2) }
+.data-table td strong { color: var(--t1); font-weight: 700 }
+
+/* ── PILLS ── */
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .04em }
+.pill::before { content:''; width: 5px; height: 5px; border-radius: 50%; background: currentColor }
+.pill-high { background: var(--accent-bg); color: #b84720 }
+.pill-med  { background: var(--gold-bg);   color: #9a6b09 }
+.pill-low  { background: var(--green-bg);  color: #236027 }
+[data-theme="dark"] .pill-high { color: #f08060 }
+[data-theme="dark"] .pill-med  { color: #d4a832 }
+[data-theme="dark"] .pill-low  { color: #66bb6a }
+
+/* ── PROB BAR ── */
+.prob-wrap { display: flex; align-items: center; gap: 8px }
+.prob-track { flex: 1; height: 5px; background: var(--bg3); border-radius: 999px; overflow: hidden }
+.prob-fill { height: 100%; border-radius: 999px; background: var(--accent) }
+.prob-num { font-family: var(--mono); font-size: 12px; color: var(--t3); min-width: 36px }
+
+/* ── CONTRACT CARDS ── */
+.contract-grid { display: grid; gap: 10px }
+.contract-card {
+  padding: 16px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surf2);
+  transition: background .25s, border-color .25s;
+}
+.contract-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--t4); margin-bottom: 6px }
+.contract-rate { font-size: 28px; font-weight: 800; letter-spacing: -.04em; line-height: 1 }
+.contract-desc { font-size: 12.5px; color: var(--t3); margin-top: 7px; line-height: 1.55 }
+
+/* ── RECALL STEPS ── */
+.recall-steps { display: grid; gap: 10px }
+.recall-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surf2);
+  transition: border-color .15s, background .25s;
+}
+.recall-step:hover { border-color: rgba(20,143,126,.4); background: var(--teal-bg) }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--teal);
+  color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+.step-body { min-width: 0 }
+.step-title { font-size: 13px; font-weight: 700; color: var(--t1); margin-bottom: 2px }
+.step-desc { font-size: 12px; color: var(--t3); line-height: 1.5 }
+.step-gain { font-family: var(--mono); font-size: 10.5px; color: var(--teal); font-weight: 500; margin-top: 5px }
+
+/* ── PIPELINE ── */
+.pipeline { display: flex; overflow: hidden; border-radius: var(--r); border: 1px solid var(--line) }
+.pipeline-step {
+  flex: 1; padding: 16px 18px; border-right: 1px solid var(--line);
+  background: var(--card-bg); position: relative;
+  transition: background .25s, border-color .25s;
+}
+.pipeline-step:last-child { border-right: none }
+.p-num { font-family: var(--mono); font-size: 10px; color: var(--t4); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px }
+.p-title { font-size: 13.5px; font-weight: 700; color: var(--t1); margin-bottom: 5px }
+.p-desc { font-size: 11.5px; color: var(--t3); line-height: 1.5 }
+.p-status { margin-top: 10px; font-family: var(--mono); font-size: 10.5px; font-weight: 500 }
+.s-done { color: var(--green) }
+.s-active { color: var(--accent) }
+
+/* ── DIVIDER ── */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 24px 0 16px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--t4);
+}
+.divider::before, .divider::after { content:''; flex: 1; height: 1px; background: var(--line) }
+
+/* ── INSIGHT BOX ── */
+.insight {
+  padding: 14px 18px; border-left: 3px solid var(--accent);
+  background: var(--accent-bg); border-radius: 0 var(--r) var(--r) 0;
+  font-size: 13px; color: var(--t2); line-height: 1.65; margin-top: 16px;
+  transition: background .25s;
+}
+.insight footer { margin-top: 6px; font-family: var(--mono); font-size: 10px; color: var(--t4); letter-spacing: .06em }
+
+/* ── LEGEND ── */
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--t3) }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0 }
+
+/* ── FOOTER ── */
+.footer {
+  padding: 18px 28px;
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--mono); font-size: 10.5px; color: var(--t4);
+  background: var(--card-bg);
+  transition: background .25s, border-color .25s;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .row2 { grid-template-columns: 1fr }
+  .row3 { grid-template-columns: 1fr 1fr }
+  .stats-strip { grid-template-columns: repeat(3,1fr) }
+  .stats-strip .stat-cell:nth-child(4),
+  .stats-strip .stat-cell:nth-child(5) { border-top: 1px solid var(--line) }
+}
+@media (max-width: 820px) {
+  .shell { grid-template-columns: 1fr }
+  .sidebar { display: none }
+  .row3 { grid-template-columns: 1fr }
+  .content, .topbar { padding-left: 16px; padding-right: 16px }
+  .stats-strip { grid-template-columns: 1fr 1fr }
+  .pipeline { flex-direction: column }
+  .pipeline-step { border-right: none; border-bottom: 1px solid var(--line) }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-inner">
+    <div class="logo-wrap">
+      <div class="logo-mark">
+        <div class="logo-icon">
+          <svg viewBox="0 0 18 18"><path d="M3 14c3.5-6 7-9 12-9" stroke-linecap="round"/><circle cx="15" cy="4.5" r="2" fill="#fff" stroke="none"/></svg>
+        </div>
+        <div class="logo-text">
+          <strong>ChurnLens</strong>
+          <span>Retention Analytics</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-section-label">Analysis</div>
+        <a class="nav-item active" href="#overview">
+          <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+          Overview
+        </a>
+        <a class="nav-item" href="#models">
+          <svg viewBox="0 0 16 16"><path d="M2 12V8m4 4V5m4 7V7m4 5V3" stroke-linecap="round"/></svg>
+          Model Comparison
+        </a>
+        <a class="nav-item" href="#risk">
+          <svg viewBox="0 0 16 16"><path d="M8 2l5.5 3v4c0 3.5-2.5 5.5-5.5 6C5 14.5 2.5 12.5 2.5 9V5L8 2z" stroke-linejoin="round"/></svg>
+          Risk Segments
+        </a>
+        <a class="nav-item" href="#features">
+          <svg viewBox="0 0 16 16"><path d="M3 4h10M3 8h7M3 12h5" stroke-linecap="round"/></svg>
+          Feature Drivers
+        </a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-section-label">Pipeline</div>
+        <a class="nav-item" href="#pipeline">
+          <svg viewBox="0 0 16 16"><path d="M3 8h10M9 5l4 3-4 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Pipeline Steps
+        </a>
+        <a class="nav-item" href="#inference">
+          <svg viewBox="0 0 16 16"><path d="M5 8h6M9 5.5L12 8l-3 2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="6"/></svg>
+          Inference Output
+        </a>
+        <a class="nav-item" href="#recall">
+          <svg viewBox="0 0 16 16"><path d="M8 3v5l3 3" stroke-linecap="round"/><circle cx="8" cy="8" r="6"/></svg>
+          Recall Strategy
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-kpi-label">Best AUC-ROC</div>
+      <div class="sidebar-kpi-val">0.845</div>
+      <div class="sidebar-kpi-sub">XGBoost · threshold 0.32</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Customer Churn Analysis — Telco Dataset</h1>
+      <p>7,043 records · 19 features · 4 models · Aug 2025</p>
+    </div>
+    <div class="topbar-right">
+      <div class="chip live">Pipeline active</div>
+      <div class="chip">Ujjawal2507 / customer-churn-prediction</div>
+      <!-- DARK MODE TOGGLE -->
+      <button class="theme-btn" id="themeToggle" title="Toggle light / dark mode" aria-label="Toggle light and dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke-linecap="round"/></svg>
+      </button>
+      <button class="action-btn" onclick="window.print()">
+        <svg viewBox="0 0 14 14"><path d="M3 4V2h8v2M3 10H1.5V6h11V10H11M3 10v2h8v-2M3 10h8"/></svg>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- KPI STRIP -->
+    <div class="stats-strip" id="overview">
+      <div class="stat-cell">
+        <div class="stat-accent" style="background:var(--accent)"></div>
+        <div class="stat-label">Churn Rate</div>
+        <div class="stat-value">26.5%</div>
+        <div class="stat-sub">of 7,043 customers</div>
+        <div class="delta delta-down">▲ Minority class</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-accent" style="background:var(--teal)"></div>
+        <div class="stat-label">Best AUC-ROC</div>
+        <div class="stat-value">0.845</div>
+        <div class="stat-sub">XGBoost selected</div>
+        <div class="delta delta-up">↑ +2.1% vs baseline</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-accent" style="background:var(--sky)"></div>
+        <div class="stat-label">Recall Achieved</div>
+        <div class="stat-value">≥ 80%</div>
+        <div class="stat-sub">threshold = 0.32</div>
+        <div class="delta delta-neu">Optimized</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-accent" style="background:var(--gold)"></div>
+        <div class="stat-label">High Risk</div>
+        <div class="stat-value">31%</div>
+        <div class="stat-sub">flagged customers</div>
+        <div class="delta delta-down">Immediate action</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-accent" style="background:var(--green)"></div>
+        <div class="stat-label">Models Trained</div>
+        <div class="stat-value">4</div>
+        <div class="stat-sub">GB · RF · LR · XGB</div>
+        <div class="delta delta-up">SMOTE balanced</div>
+      </div>
+    </div>
+
+    <!-- ROW 1: ROC + Right column -->
+    <div class="row2" id="models">
+      <!-- ROC CHART -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>ROC Curve Comparison</h2>
+            <p>All four models plotted — click a tab to highlight that model's curve against the others.</p>
+          </div>
+          <div class="model-tabs">
+            <button class="model-tab active" onclick="setModel('xgb',this)">XGB</button>
+            <button class="model-tab" onclick="setModel('gb',this)">GB</button>
+            <button class="model-tab" onclick="setModel('rf',this)">RF</button>
+            <button class="model-tab" onclick="setModel('lr',this)">LR</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#148f7e"></span>XGBoost 0.845</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#2970b8"></span>Grad. Boosting 0.831</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#b8820f"></span>Random Forest 0.814</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#888"></span>Logistic Reg. 0.788</span>
+          </div>
+          <div class="chart-wrap h260">
+            <canvas id="rocChart" role="img" aria-label="ROC curves for four models">XGBoost 0.845, Gradient Boosting 0.831, Random Forest 0.814, Logistic Regression 0.788.</canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COL -->
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <!-- Risk Segments -->
+        <div class="card" id="risk">
+          <div class="card-head"><div><h2>Risk Segmentation</h2><p>Customer distribution across three retention priority tiers.</p></div></div>
+          <div class="card-body">
+            <div class="risk-section">
+              <div class="risk-row">
+                <div class="risk-label" style="color:var(--accent)">High</div>
+                <div class="risk-track"><div class="risk-fill" style="width:31%;background:var(--accent)"></div></div>
+                <div class="risk-val">31%</div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-label" style="color:var(--gold)">Medium</div>
+                <div class="risk-track"><div class="risk-fill" style="width:24%;background:var(--gold)"></div></div>
+                <div class="risk-val">24%</div>
+              </div>
+              <div class="risk-row">
+                <div class="risk-label" style="color:var(--green)">Low</div>
+                <div class="risk-track"><div class="risk-fill" style="width:45%;background:var(--green)"></div></div>
+                <div class="risk-val">45%</div>
+              </div>
+            </div>
+            <div class="insight">
+              Month-to-month contract holders make up most of the high-risk segment at a 42% churn rate — three times the overall average.
+              <footer>— ChurnLens insight engine</footer>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut -->
+        <div class="card">
+          <div class="card-head"><div><h2>Churn Distribution</h2><p>Overall class balance in the training dataset.</p></div></div>
+          <div class="card-body" style="display:flex;align-items:center;gap:20px">
+            <div class="chart-wrap" style="width:110px;height:110px;flex-shrink:0">
+              <canvas id="donutChart" role="img" aria-label="Donut: 73.5% retained, 26.5% churned">Retained 73.5%, Churned 26.5%.</canvas>
+            </div>
+            <div style="display:grid;gap:10px;flex:1">
+              <div>
+                <div class="stat-label">No Churn</div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--teal)">73.5%</div>
+                <div style="font-size:12px;color:var(--t3)">5,174 customers</div>
+              </div>
+              <div>
+                <div class="stat-label">Churned</div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--accent)">26.5%</div>
+                <div style="font-size:12px;color:var(--t3)">1,869 customers</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider" id="features">Feature Analysis & Drivers</div>
+
+    <!-- ROW 2 -->
+    <div class="row3">
+      <!-- Feature Importance -->
+      <div class="card">
+        <div class="card-head"><div><h2>Feature Importance</h2><p>Relative contribution of each variable to the best model's predictions.</p></div></div>
+        <div class="card-body">
+          <div class="feat-list">
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Contract type</span><span class="feat-pct">28%</span></div><div class="feat-track"><div class="feat-fill" style="width:93%"></div></div></div>
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Tenure</span><span class="feat-pct">22%</span></div><div class="feat-track"><div class="feat-fill" style="width:73%"></div></div></div>
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Monthly charges</span><span class="feat-pct">18%</span></div><div class="feat-track"><div class="feat-fill" style="width:60%"></div></div></div>
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Total charges</span><span class="feat-pct">14%</span></div><div class="feat-track"><div class="feat-fill" style="width:47%"></div></div></div>
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Internet service</span><span class="feat-pct">10%</span></div><div class="feat-track"><div class="feat-fill" style="width:33%"></div></div></div>
+            <div class="feat-row"><div class="feat-meta"><span class="feat-name">Payment method</span><span class="feat-pct">8%</span></div><div class="feat-track"><div class="feat-fill" style="width:27%"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contract Breakdown -->
+      <div class="card">
+        <div class="card-head"><div><h2>Contract Type Breakdown</h2><p>Churn rate varies dramatically by commitment tier.</p></div></div>
+        <div class="card-body">
+          <div class="contract-grid">
+            <div class="contract-card" style="border-left:3px solid var(--accent)">
+              <div class="contract-tag">Month-to-month</div>
+              <div class="contract-rate" style="color:var(--accent)">42%</div>
+              <div class="contract-desc">Highest risk. No lock-in means any friction event triggers exit. Immediate retention priority.</div>
+            </div>
+            <div class="contract-card" style="border-left:3px solid var(--gold)">
+              <div class="contract-tag">One year</div>
+              <div class="contract-rate" style="color:var(--gold)">11%</div>
+              <div class="contract-desc">Moderate risk. Suitable for upsell and service bundling during renewal windows.</div>
+            </div>
+            <div class="contract-card" style="border-left:3px solid var(--green)">
+              <div class="contract-tag">Two year</div>
+              <div class="contract-rate" style="color:var(--green)">3%</div>
+              <div class="contract-desc">Benchmark cohort. Use patterns here to define the ideal customer profile.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Charges Chart -->
+      <div class="card">
+        <div class="card-head"><div><h2>Monthly Charges vs Churn</h2><p>Churned customers cluster in the $65–$85 band, often without tech-support add-ons.</p></div></div>
+        <div class="card-body">
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Churned</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--teal)"></span>Retained</span>
+          </div>
+          <div class="chart-wrap h220">
+            <canvas id="chargesChart" role="img" aria-label="Grouped bar chart of monthly charges vs churn">Churned customers peak at $65-85 band; retained customers distributed more evenly.</canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider" id="pipeline">ML Pipeline</div>
+
+    <!-- PIPELINE -->
+    <div class="card row-full">
+      <div class="card-head"><div><h2>End-to-End Pipeline</h2><p>From raw Telco CSV to scored customer risk output — five reproducible stages.</p></div></div>
+      <div class="card-body" style="padding:0">
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <div class="p-num">Step 01</div>
+            <div class="p-title">EDA</div>
+            <div class="p-desc">Churn distribution, numeric histograms, categorical churn rates, correlation heatmap</div>
+            <div class="p-status s-done">✓ eda.py</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="p-num">Step 02</div>
+            <div class="p-title">Preprocess</div>
+            <div class="p-desc">Encode categoricals, scale numerics, handle missing TotalCharges values</div>
+            <div class="p-status s-done">✓ churn_pipeline.py</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="p-num">Step 03</div>
+            <div class="p-title">Balance + Train</div>
+            <div class="p-desc">SMOTE · class_weight='balanced' · 4 models with 5-fold CV</div>
+            <div class="p-status s-done">✓ best_model.pkl</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="p-num">Step 04</div>
+            <div class="p-title">Threshold Tune</div>
+            <div class="p-desc">Precision-recall curve · find threshold for ≥ 80% recall · save to threshold.txt</div>
+            <div class="p-status s-done">✓ threshold = 0.32</div>
+          </div>
+          <div class="pipeline-step">
+            <div class="p-num">Step 05</div>
+            <div class="p-title">Score</div>
+            <div class="p-desc">predict.py scores new CSV → probability, prediction, risk segment output</div>
+            <div class="p-status s-active">→ predict.py</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider" id="inference">Inference Output Sample</div>
+
+    <!-- TABLE + RECALL -->
+    <div class="row2">
+      <!-- Table -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Scored Customer Sample</h2>
+            <p>Output of predict.py — probability, binary prediction, and risk bucket per customer.</p>
+          </div>
+          <div class="chip">predictions.csv</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Contract</th>
+                <th>Monthly</th>
+                <th>Churn Prob.</th>
+                <th>Prediction</th>
+                <th>Segment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>C-0041</strong></td>
+                <td>Month-to-month</td>
+                <td class="mono">₹7,250</td>
+                <td><div class="prob-wrap"><div class="prob-track"><div class="prob-fill" style="width:87%"></div></div><span class="prob-num">0.871</span></div></td>
+                <td class="mono">1</td>
+                <td><span class="pill pill-high">HIGH</span></td>
+              </tr>
+              <tr>
+                <td><strong>C-0103</strong></td>
+                <td>One year</td>
+                <td class="mono">₹4,890</td>
+                <td><div class="prob-wrap"><div class="prob-track"><div class="prob-fill" style="width:54%"></div></div><span class="prob-num">0.541</span></div></td>
+                <td class="mono">1</td>
+                <td><span class="pill pill-med">MEDIUM</span></td>
+              </tr>
+              <tr>
+                <td><strong>C-0219</strong></td>
+                <td>Two year</td>
+                <td class="mono">₹2,940</td>
+                <td><div class="prob-wrap"><div class="prob-track"><div class="prob-fill" style="width:9%"></div></div><span class="prob-num">0.090</span></div></td>
+                <td class="mono">0</td>
+                <td><span class="pill pill-low">LOW</span></td>
+              </tr>
+              <tr>
+                <td><strong>C-0316</strong></td>
+                <td>Month-to-month</td>
+                <td class="mono">₹6,580</td>
+                <td><div class="prob-wrap"><div class="prob-track"><div class="prob-fill" style="width:76%"></div></div><span class="prob-num">0.764</span></div></td>
+                <td class="mono">1</td>
+                <td><span class="pill pill-high">HIGH</span></td>
+              </tr>
+              <tr>
+                <td><strong>C-0447</strong></td>
+                <td>One year</td>
+                <td class="mono">₹3,860</td>
+                <td><div class="prob-wrap"><div class="prob-track"><div class="prob-fill" style="width:28%"></div></div><span class="prob-num">0.284</span></div></td>
+                <td class="mono">0</td>
+                <td><span class="pill pill-low">LOW</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recall Strategy -->
+      <div class="card" id="recall">
+        <div class="card-head"><div><h2>Recall Improvement Strategy</h2><p>Five techniques applied to maximize churn detection at an acceptable precision tradeoff.</p></div></div>
+        <div class="card-body">
+          <div class="recall-steps">
+            <div class="recall-step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <div class="step-title">Lower classification threshold</div>
+                <div class="step-desc">Default 0.5 → 0.32. Catch more churners without retraining the model.</div>
+                <div class="step-gain">+5–10% recall gain</div>
+              </div>
+            </div>
+            <div class="recall-step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <div class="step-title">SMOTE oversampling</div>
+                <div class="step-desc">Synthetic minority oversampling on training data to balance the 73 / 27 split.</div>
+                <div class="step-gain">+5–8% recall gain</div>
+              </div>
+            </div>
+            <div class="recall-step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <div class="step-title">class_weight = 'balanced'</div>
+                <div class="step-desc">Penalizes misclassifying the minority class more heavily during training.</div>
+                <div class="step-gain">+5–8% recall gain</div>
+              </div>
+            </div>
+            <div class="recall-step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <div class="step-title">XGBoost scale_pos_weight</div>
+                <div class="step-desc">Auto-calculated ratio ≈ 2.77 passed to XGBoost to handle imbalance natively.</div>
+                <div class="step-gain">+3–6% recall gain</div>
+              </div>
+            </div>
+            <div class="recall-step">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <div class="step-title">GridSearchCV with scoring = 'recall'</div>
+                <div class="step-desc">Hyperparameter tuning that directly optimizes recall instead of accuracy.</div>
+                <div class="step-gain">+2–5% recall gain</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .content -->
+
+  <footer class="footer">
+    <span>ChurnLens · Telco Customer Churn · Kaggle/blastchar · Ujjawal2507</span>
+    <span>churn_pipeline.py · eda.py · predict.py · dashboard.html</span>
+  </footer>
+
+</div><!-- end .main -->
+</div><!-- end .shell -->
+
+<script>
+/* ── THEME TOGGLE ── */
+const root = document.documentElement;
+const btn  = document.getElementById('themeToggle');
+let theme  = localStorage.getItem('cl-theme') || 'light';
+root.setAttribute('data-theme', theme);
+
+btn.addEventListener('click', () => {
+  theme = theme === 'light' ? 'dark' : 'light';
+  root.setAttribute('data-theme', theme);
+  localStorage.setItem('cl-theme', theme);
+  refreshCharts();
+});
+
+/* ── CHART HELPERS ── */
+const rocColors = { xgb:'#148f7e', gb:'#2970b8', rf:'#b8820f', lr:'#888888' };
+const rocLabels = { xgb:'XGBoost', gb:'Grad. Boosting', rf:'Random Forest', lr:'Logistic Reg.' };
+const rocDataPts = {
+  xgb: [0,.38,.58,.76,.87,.94,1],
+  gb:  [0,.35,.55,.73,.84,.92,1],
+  rf:  [0,.29,.48,.66,.79,.89,1],
+  lr:  [0,.24,.42,.60,.73,.84,1]
+};
+const xLabels = [0,.1,.2,.4,.6,.8,1];
+
+let rocChart, donutChart, chargesChart;
+let activeModel = 'xgb';
+
+function gridColor() { return theme === 'dark' ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)' }
+function tickColor() { return theme === 'dark' ? '#86858d' : '#a39f99' }
+function tooltipBg() { return theme === 'dark' ? '#2e2e33' : '#ffffff' }
+function tooltipTitle() { return theme === 'dark' ? '#f0eff0' : '#111110' }
+function tooltipBody() { return theme === 'dark' ? '#86858d' : '#6e6c68' }
+function tooltipBorder() { return theme === 'dark' ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.09)' }
+function donutRetained() { return theme === 'dark' ? '#148f7e' : '#148f7e' }
+function donutChurned() { return theme === 'dark' ? '#d95f35' : '#d95f35' }
+
+function buildRocDatasets(active) {
+  return Object.keys(rocColors).map(key => ({
+    label: rocLabels[key],
+    data: rocDataPts[key],
+    borderColor: key === active ? rocColors[key] : rocColors[key] + '30',
+    borderWidth: key === active ? 2.5 : 1,
+    tension: .35, pointRadius: 0, pointHoverRadius: 5,
+    borderDash: key === 'lr' ? [4,4] : [],
+    backgroundColor: 'transparent',
+  }));
+}
+
+const tickFont = { family: 'JetBrains Mono, monospace', size: 10 };
+const titleFont = { family: 'JetBrains Mono, monospace', size: 10 };
+
+function buildScaleOpts(xTitle, yTitle) {
+  return {
+    x: {
+      title: { display: true, text: xTitle, color: tickColor(), font: titleFont },
+      ticks: { color: tickColor(), font: tickFont },
+      grid: { color: gridColor() }
+    },
+    y: {
+      min: 0, max: 1,
+      title: { display: true, text: yTitle, color: tickColor(), font: titleFont },
+      ticks: { color: tickColor(), font: tickFont },
+      grid: { color: gridColor() }
+    }
+  };
+}
+
+function tooltipOpts() {
+  return {
+    backgroundColor: tooltipBg(),
+    titleColor: tooltipTitle(),
+    bodyColor: tooltipBody(),
+    borderColor: tooltipBorder(),
+    borderWidth: 1, padding: 10,
+    titleFont: { family: 'JetBrains Mono, monospace', size: 11 },
+    bodyFont: { family: 'JetBrains Mono, monospace', size: 10 }
+  };
+}
+
+function buildCharts() {
+  /* ROC */
+  rocChart = new Chart(document.getElementById('rocChart'), {
+    type: 'line',
+    data: { labels: xLabels, datasets: buildRocDatasets(activeModel) },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: tooltipOpts() },
+      scales: buildScaleOpts('False Positive Rate', 'True Positive Rate')
+    }
+  });
+
+  /* DONUT */
+  donutChart = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['No Churn','Churn'],
+      datasets: [{ data:[73.5,26.5], backgroundColor:[donutRetained(), donutChurned()], borderWidth:0, hoverOffset:4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout:'68%', plugins:{ legend:{ display:false } } }
+  });
+
+  /* CHARGES */
+  chargesChart = new Chart(document.getElementById('chargesChart'), {
+    type: 'bar',
+    data: {
+      labels: ['<$30','$30–50','$50–65','$65–85','$85–100','>$100'],
+      datasets: [
+        { label:'Churned',  data:[40,95,180,320,290,85],   backgroundColor:'#d95f35', borderRadius:4, borderSkipped:false },
+        { label:'Retained', data:[320,580,720,410,190,40], backgroundColor:'#148f7e', borderRadius:4, borderSkipped:false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip: tooltipOpts() },
+      scales: {
+        x: { ticks:{ color:tickColor(), font:tickFont }, grid:{ display:false } },
+        y: { ticks:{ color:tickColor(), font:tickFont }, grid:{ color:gridColor() } }
+      }
+    }
+  });
+}
+
+function refreshCharts() {
+  [rocChart, donutChart, chargesChart].forEach(c => c && c.destroy());
+  buildCharts();
+  setModel(activeModel, document.querySelector('.model-tab.active'));
+}
+
+window.setModel = function(key, tabEl) {
+  activeModel = key;
+  document.querySelectorAll('.model-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  if (!rocChart) return;
+  rocChart.data.datasets = buildRocDatasets(key);
+  rocChart.update();
+};
+
+/* ── ANIMATE BARS ── */
+function animateBars() {
+  document.querySelectorAll('.feat-fill, .risk-fill').forEach(el => {
+    const w = el.style.width; el.style.width = '0';
+    setTimeout(() => { el.style.width = w }, 200);
+  });
+}
+
+window.addEventListener('load', () => { buildCharts(); animateBars() });
+</script>
+</body>
+</html>

@@ -25,23 +25,6 @@
 
 ---
 
-## Project Structure
-
-```
-customer_churn_project/
-├── data/                        ← Place your CSV here
-│   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
-├── src/
-│   ├── churn_pipeline.py        ← Main train/evaluate pipeline
-│   ├── eda.py                   ← Exploratory data analysis
-│   └── predict.py               ← Inference on new data
-├── dashboard.html               ← Interactive web dashboard
-├── requirements.txt
-└── README.md
-```
-
----
-
 ## Quick Start
 
 ### 1. Clone the repository

@@ -9,7 +9,7 @@
 ---
 
 ##  Live Demo
- [View Live Dashboard](https://Ujjawal2507.github.io/customer-churn-prediction)
+ [View Live Dashboard](https://ujjawal2507.github.io/Customer-Churn-Prediction/)
  
 ## About
 

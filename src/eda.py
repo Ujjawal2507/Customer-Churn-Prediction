@@ -1,9 +1,4 @@
-"""
-Churn EDA — Exploratory Data Analysis
-=======================================
-Standalone EDA module. Run independently or import into notebooks.
-Produces charts saved to outputs/eda/
-"""
+
 
 import pandas as pd
 import numpy as np

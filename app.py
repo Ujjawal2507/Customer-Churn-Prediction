@@ -1,6 +1,6 @@
 """
 app.py — Flask server for ChurnLens
-Serves the dashboard.html on Render
+Serves the index.html on Render
 """
 
 from flask import Flask, render_template, send_from_directory
@@ -10,7 +10,7 @@ app = Flask(__name__, template_folder=".")
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "dashboard.html")
+    return send_from_directory(".", "index.html")
 
 @app.route("/health")
 def health():

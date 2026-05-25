@@ -10,6 +10,7 @@
 
 ##  Live Demo
  [View Live Dashboard](https://ujjawal2507.github.io/Customer-Churn-Prediction/)
+ [Render Dashboard](https://customer-churn-prediction-neg5.onrender.com)
  
 ## About
 

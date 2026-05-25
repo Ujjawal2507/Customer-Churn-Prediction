@@ -8,6 +8,9 @@
 
 ---
 
+##  Live Demo
+ [View Live Dashboard](https://Ujjawal2507.github.io/customer-churn-prediction)
+ 
 ## About
 
 **ChurnLens** is a complete Customer Churn Prediction project built with Python and scikit-learn. It analyzes the Telco Customer Churn dataset (7,043 customers, 19 features) to identify customers at risk of leaving — helping businesses take proactive retention action.
